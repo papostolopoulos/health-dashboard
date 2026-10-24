@@ -26,7 +26,7 @@ LDL 163 mg/dL (fasting, Jun 2026) — persistently elevated, diet+genetics domin
 - Photos of meals → Claude estimates kcal/protein, flags glycemic load & evening fluid/sugar.
 - ~9 PM check-in → **collect 8 ratings by plain text** (the interactive tap widget is NOT selectable on Paris's client — don't rebuild it). Ratings: Energy AM, Energy PM, Mood, Performance, Libido, Sleep quality (1–5), Nocturia (count), Hydration (1 clear/2 yellow/3 dark). Claude returns a tab-separated row for the "Daily wellness" tab.
   - **Row column order (14):** Date · Notes · Energy AM · Energy PM · Mood · Performance · Libido · Sleep · Nocturia · Hydration · First meal · Last meal · Alcohol · Evening flag. Rest days → Performance = "rest".
-- **Targets:** 2000–2500 kcal (training days); protein band 80–100g (floor 80, ceiling ~100 for kidney reasons — do NOT push higher).
+- **Targets:** 2000–2500 kcal (training days); protein target reference band ~80–100g as a healthy daily anchor, though intake may naturally float higher (100–110g+) on high-expenditure or active training days to support higher caloric intake. With normal kidney function confirmed (Cystatin C eGFR 86), occasional higher protein days do not require rigid restriction, provided long-term body composition (stable muscle mass) and renal markers remain optimal.
 
 ## Hepatitis B vaccination confirmed (1 Sep 2026)
 - **Kaiser immunization record received:** two doses of Heplisav-B (Hepatitis B recombinant, adjuvanted) administered Nov 8, 2022 and Dec 16, 2022 at Sutter Health. Heplisav-B is an FDA-approved **2-dose** series (unlike older 3-dose Hep B vaccines) — so this is a complete series, not partial.
