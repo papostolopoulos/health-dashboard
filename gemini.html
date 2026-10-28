@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Βιολογικές Παράμετροι — Health Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+ :root{
+ --bg:#0B1220; --panel:#101A2E; --panel2:#0E1729; --line:#1E2C47;
+ --txt:#D8E2F2; --soft:#8FA3C2;
+ --blue:#4C8DFF; --orange:#F5A623; --teal:#2FD5B0; --purple:#B579F2;
+ --red:#E4574F; --green:#4CC38A; --amber:#E8B33B;
+ --mono:"SF Mono", ui-monospace, Menlo, monospace;
+ --sans:-apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+ }
+ *{box-sizing:border-box; margin:0; padding:0;}
+ body{background:var(--bg); color:var(--txt); font-family:var(--sans); line-height:1.5;}
+ .alert{border:1px solid #5A2430; background:linear-gradient(90deg,#1A0F1E,#141126); padding:12px 18px;}
+ .alert .t{color:#F08CA4; font-weight:700; font-size:14.5px;}
+ .alert .b{font-size:13.5px; margin-top:3px; color:var(--txt);}
+ .alert .b b{color:#F08CA4;}
+ header{padding:18px 20px 10px;}
+ header h1{font-size:clamp(20px,4vw,27px); font-weight:700; letter-spacing:.01em;}
+ header .sub{font-family:var(--mono); font-size:11.5px; color:var(--soft); margin-top:4px; text-transform:uppercase; letter-spacing:.12em;}
+ nav{display:flex; gap:1px; overflow-x:auto; padding:0 10px; border-bottom:1px solid var(--line); position:sticky; top:0; background:var(--bg); z-index:5;}
+ nav button{appearance:none; border:0; background:none; padding:11px 10px; font-family:var(--mono); font-size:11.5px; color:var(--soft); cursor:pointer; border-bottom:3px solid transparent; white-space:nowrap;}
+ nav button.on{color:var(--txt); font-weight:600; border-bottom-color:var(--blue);}
+ nav button:focus-visible{outline:2px solid var(--blue); outline-offset:-2px;}
+ main{max-width:1080px; margin:0 auto; padding:16px 14px 60px;}
+ section{display:none;} section.on{display:block;}
+ .card{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:16px; margin:12px 0;}
+ .card h2{font-size:15.5px; font-weight:700; margin-bottom:2px;}
+ .card h2::before{content:"● "; color:var(--dot,var(--blue)); font-size:11px;}
+ .card .note{font-size:13px; color:var(--soft); margin-bottom:10px;}
+ .chartbox{position:relative; height:260px;}
+ .tall{height:300px;}
+ .grid2{display:grid; grid-template-columns:1fr 1fr; gap:12px;}
+ @media (max-width:760px){ .grid2{grid-template-columns:1fr;} }
+ .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; margin:12px 0;}
+ .kpi{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px;}
+ .kpi .v{font-family:var(--mono); font-size:21px; font-weight:700;}
+ .kpi .l{font-size:10.5px; color:var(--soft); text-transform:uppercase; letter-spacing:.07em; margin-top:2px;}
+ .kpi .d{font-size:12px; margin-top:3px;}
+ .up{color:var(--green);} .down{color:var(--red);} .flat{color:var(--soft);}
+ .hypo,.rule,.pend{padding:10px 14px; border-radius:0 8px 8px 0; margin:12px 0; font-size:13.5px;}
+ .hypo{border-left:4px solid var(--amber); background:#181425;}
+ .rule{border-left:4px solid var(--red); background:#1A1220;}
+ .pend{border-left:4px solid var(--blue); background:#101A30;}
+ .hypo b,.rule b,.pend b{font-family:var(--mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase; display:block; margin-bottom:3px;}
+ .hypo b{color:var(--amber);} .rule b{color:var(--red);} .pend b{color:var(--blue);}
+ table.mini{border-collapse:collapse; width:100%; font-family:var(--mono); font-size:12.5px;}
+ table.mini th{text-align:left; padding:6px 8px; border-bottom:2px solid var(--soft); font-size:11px; letter-spacing:.05em; color:var(--soft);}
+ table.mini td{padding:6px 8px; border-bottom:1px solid var(--line);}
+ .ok{color:var(--green); font-weight:600;} .warn{color:var(--amber); font-weight:600;} .bad{color:var(--red); font-weight:600;}
+ footer{max-width:1080px; margin:0 auto; padding:0 14px 40px; font-size:12px; color:var(--soft); font-family:var(--mono);}
+ @media (prefers-reduced-motion: reduce){ *{animation:none!important; transition:none!important;} }
+</style>
+</head>
+<body>
+<div class="alert">
+ <div class="t">🎉 October 2026 Review: VO₂ Max Hits All-Time High (50.7), Fitness Age Holds at 46</div>
+ <div class="b"><b>VO₂ Max reached a record high of 50.7 mL/kg/min</b> on October 25. Cystatin C eGFR = 86 confirms kidneys are fully normal. PSA improved to 2.0. HbA1c 5.5% — no diabetes. LDL 163 — the one number left to move. Body fat below 20% (19.8%).</div>
+</div>
+<header>
+ <h1>Βιολογικές Παράμετροι</h1>
+ <div class="sub">Health dashboard · Paris · updated 27 Oct 2026</div>
+</header>
+<nav id="nav">
+ <button data-t="overview" class="on">Overview</button>
+ <button data-t="context">👤 Context</button>
+ <button data-t="correl">🔗 Correlations</button>
+ <button data-t="chol">💊 Cholesterol</button>
+ <button data-t="sugar">🧪 Blood sugar</button>
+ <button data-t="kidney">🫘 Kidneys</button>
+ <button data-t="cbc">🩸 Blood count</button>
+ <button data-t="liver">🫀 Liver</button>
+ <button data-t="body">⚖️ Body comp</button>
+ <button data-t="activity">🏊 Activity</button>
+ <button data-t="urine">📑 Urine</button>
+ <button data-t="infect">🦠 Infections</button>
+ <button data-t="prostate">🔍 Prostate</button>
+ <button data-t="plan">💡 Action plan</button>
+</nav>
+<main>
+  
+<section id="overview" class="on">
+ <div class="kpis">
+ <div class="kpi"><div class="v" style="color:var(--green)">50.7</div><div class="l">VO₂ max</div><div class="d up">New series high (Oct 25)</div></div>
+ <div class="kpi"><div class="v" style="color:var(--green)">46</div><div class="l">Fitness age</div><div class="d up">Steady through Oct</div></div>
+ <div class="kpi"><div class="v" style="color:var(--amber)">163</div><div class="l">LDL (fasting)</div><div class="d flat">The one to move</div></div>
+ <div class="kpi"><div class="v" style="color:var(--green)">2.0</div><div class="l">PSA</div><div class="d up">Improved</div></div>
+ <div class="kpi"><div class="v" style="color:var(--green)">19.8%</div><div class="l">Body fat</div><div class="d up">Sub-20 maintained</div></div>
+ <div class="kpi"><div class="v" style="color:var(--green)">0.49</div><div class="l">Waist-to-height</div><div class="d up">Under 0.5 line</div></div>
+ </div>
+  
+ <div class="pend"><b>📅 October 2026 Review — Aerobic Peak & Stability</b>
+ VO₂ max reached an all-time high of 50.7 mL/kg/min, and fitness age remains steady at 46. Blood pressure readings remain optimal (latest 101/68 mmHg). Renal function confirmed normal (Cystatin C eGFR 86). Muscle mass retention and body composition remain stable on whole-food TRE strategy.</div>
+ <div class="card">
+ <h2>Weight &amp; BMI Trend — sustained decline from TRE diet</h2>
+ <div class="chartbox tall"><canvas id="cWeightBMI"></canvas></div>
+ </div>
+ <div class="grid2">
+ <div class="card">
+ <h2>Body Fat % Trend</h2>
+ <div class="chartbox"><canvas id="cBF"></canvas></div>
+ </div>
+ <div class="card">
+ <h2>Torso Circumference — under chest (2007–2026)</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">Shape/recomposition trend, measured under the chest.</div>
+ <div class="chartbox"><canvas id="cWaistLong"></canvas></div>
+ </div>
+ </div>
+ <div class="card">
+ <h2>True Waist — at navel, full exhale (2007–2026) &amp; waist-to-height</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">89 cm = your waist-to-height 0.5 boundary; 94 cm = population increased-risk. Latest: 87 cm → ratio 0.49.</div>
+ <div class="chartbox tall"><canvas id="cWaistTrue"></canvas></div>
+ </div>
+</section>
+  
+<section id="context">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Personal Health Context</h2>
+ <div class="note" style="margin:0 2px 8px; color:var(--soft);">Your profile, diet, supplements, and medications — relevant to interpreting your lab results and daily metrics.</div>
+  
+ <div class="grid2">
+ <div class="card">
+ <h2>Physical Profile</h2>
+ <table class="mini">
+ <tr><td style="color:var(--soft)">Age</td><td>52 (born May 17, 1974)</td></tr>
+ <tr><td style="color:var(--soft)">Height</td><td>178 cm</td></tr>
+ <tr><td style="color:var(--soft)">Current weight</td><td>~78.2 kg (Oct 2026)</td></tr>
+ <tr><td style="color:var(--soft)">Current BMI</td><td>~24.7 — normal</td></tr>
+ <tr><td style="color:var(--soft)">Body fat %</td><td class="ok">19.8% — sub-20 maintained</td></tr>
+ <tr><td style="color:var(--soft)">Fitness age</td><td class="ok">46 — ~6 yrs younger</td></tr>
+ <tr><td style="color:var(--soft)">Blood pressure</td><td class="ok">101/68 — optimal</td></tr>
+ </table>
+ </div>
+ <div class="card">
+ <h2>Diet Pattern &amp; Lifestyle</h2>
+ <table class="mini">
+ <tr><td style="color:var(--soft)">Meal frequency</td><td>2/day (time-restricted feeding)</td></tr>
+ <tr><td style="color:var(--soft)">Processed foods</td><td class="ok">None — whole foods strategy</td></tr>
+ <tr><td style="color:var(--soft)">Bread</td><td>Homemade only — no commercial</td></tr>
+ <tr><td style="color:var(--soft)">Data integrity</td><td>Strict timestamp logging</td></tr>
+ </table>
+ </div>
+ </div>
+</section>
+
+<section id="correl">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Correlations: Weight, Diet &amp; Lab Results</h2>
+ <div class="card">
+ <h2>Weight vs blood sugar</h2>
+ <div class="chartbox tall"><canvas id="cWtGlu"></canvas></div>
+ </div>
+ <div class="card">
+ <h2>Nocturia vs evening type</h2>
+ <div class="chartbox"><canvas id="cNoct"></canvas></div>
+ </div>
+ <div class="card">
+ <h2>Last intake hour vs that night's sleep</h2>
+ <div class="chartbox"><canvas id="cIntakeSleep"></canvas></div>
+ </div>
+</section>
+
+<section id="chol">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Cholesterol &amp; Blood Fats</h2>
+ <div class="card">
+ <h2>Cholesterol trend 2016–2026</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">LDL remains persistently elevated (~163 mg/dL), pointing to a genetic component rather than lifestyle alone.</div>
+ <div class="chartbox tall"><canvas id="cChol"></canvas></div>
+ </div>
+</section>
+
+<section id="sugar">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Blood Sugar &amp; Diabetes Risk</h2>
+ <div class="card">
+ <h2>Fasting blood sugar trend</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">HbA1c is 5.5% (normal). Fasting glucose tracks closely with body weight fluctuations.</div>
+ <div class="chartbox tall"><canvas id="cGlucose"></canvas></div>
+ </div>
+</section>
+
+<section id="kidney">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Kidney Function</h2>
+ <div class="card">
+ <h2>eGFR trend</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">Cystatin C eGFR confirmed at 86, verifying fully normal renal function.</div>
+ <div class="chartbox"><canvas id="cEgfr"></canvas></div>
+ </div>
+ <div class="card">
+ <h2>Creatinine trend</h2>
+ <div class="chartbox"><canvas id="cCreat"></canvas></div>
+ </div>
+</section>
+
+<section id="cbc">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Blood Count (CBC)</h2>
+ <div class="card">
+ <h2>Your blood count results</h2>
+ <table class="mini">
+ <tr><th>Measured</th><th>What it is</th><th>Range</th><th>Status</th></tr>
+ <tr><td>WBC</td><td>Immune-defense count</td><td>4.0–11.0 K/µL</td><td class="ok">Normal ✓</td></tr>
+ <tr><td>RBC</td><td>Oxygen-delivery count</td><td>4.40–6.00 M/µL</td><td class="ok">Normal ✓</td></tr>
+ <tr><td>Hemoglobin</td><td>Oxygen-carrying protein</td><td>13.5–18.0 g/dL</td><td class="ok">Excellent ✓</td></tr>
+ <tr><td>Platelets</td><td>Clotting cells</td><td>150–400 K/µL</td><td class="ok">Normal ✓</td></tr>
+ </table>
+ </div>
+</section>
+
+<section id="liver">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Liver Function</h2>
+ <div class="card">
+ <h2>Liver enzyme trends 2016–2026</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">ALT and AST remain within healthy normal physiological boundaries.</div>
+ <div class="chartbox tall"><canvas id="cLiver"></canvas></div>
+ </div>
+</section>
+
+<section id="body">
+ <div class="card">
+ <h2>Muscle mass</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">Stable retention around 59.5–59.8 kg across weight changes.</div>
+ <div class="chartbox"><canvas id="cMuscle"></canvas></div>
+ </div>
+ <div class="card">
+ <h2>Chest vs torso tape</h2>
+ <div class="chartbox"><canvas id="cTape"></canvas></div>
+ </div>
+</section>
+
+<section id="activity">
+ <div class="grid2">
+ <div class="card"><h2>VO₂ max — 12 months</h2><div class="chartbox"><canvas id="cVo2"></canvas></div></div>
+ <div class="card"><h2>Weekly steps</h2><div class="chartbox"><canvas id="cSteps"></canvas></div></div>
+ </div>
+ <div class="card">
+ <h2>Training mix</h2>
+ <div class="chartbox"><canvas id="cMix"></canvas></div>
+ </div>
+ <div class="card">
+ <h2>Activities per year by type</h2>
+ <div class="chartbox tall"><canvas id="cYearMix"></canvas></div>
+ </div>
+</section>
+
+<section id="urine">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Urine Test (Urinalysis)</h2>
+ <div class="card">
+ <h2>Urinalysis history</h2>
+ <table class="mini">
+ <tr><th>Tested</th><th>Checks for</th><th>Normal</th><th>Status</th></tr>
+ <tr><td>Protein</td><td>Kidney filter leak</td><td>None</td><td class="warn">Trace</td></tr>
+ <tr><td>Glucose</td><td>Sugar spill</td><td>None</td><td class="ok">None</td></tr>
+ <tr><td>Infection</td><td>WBC/bacteria</td><td>Neg</td><td class="ok">Neg</td></tr>
+ </table>
+ </div>
+</section>
+
+<section id="infect">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">Infection &amp; STI Tests</h2>
+ <div class="card">
+ <h2>All tests negative across all years</h2>
+ <table class="mini">
+ <tr><th>Test</th><th>Detects</th><th>Status</th></tr>
+ <tr><td>HIV (4th gen)</td><td>HIV virus & antibodies</td><td class="ok">Non-react ✓</td></tr>
+ <tr><td>Hepatitis C</td><td>Hep C antibodies</td><td class="ok">Neg ✓</td></tr>
+ <tr><td>Syphilis (RPR)</td><td>Syphilis bacteria</td><td class="ok">Non-react ✓</td></tr>
+ </table>
+ </div>
+</section>
+
+<section id="prostate">
+ <h2 style="font-size:20px; margin:8px 2px 2px;">PSA — Prostate Health Marker</h2>
+ <div class="card">
+ <h2>PSA values (Nov 2023 · Jan 2025 · Jun 2026)</h2>
+ <div class="note" style="margin:-2px 0 6px; color:var(--soft);">PSA improved from 2.80 down to 2.0 following sustained weight optimization.</div>
+ <div class="chartbox"><canvas id="cPsa"></canvas></div>
+ </div>
+</section>
+
+<section id="plan">
+ <div class="card">
+ <h2>Experiment queue &amp; Action items</h2>
+ <table class="mini">
+ <tr><th>#</th><th>Experiment</th><th>Status</th></tr>
+ <tr><td>1</td><td>Dry evening fortnight</td><td>Ready</td></tr>
+ <tr><td>2</td><td>Basmati switch</td><td>Ready</td></tr>
+ </table>
+ </div>
+</section>
+
+</main>
+<footer>Sources: Jun-2026 labs · daily check-ins · Βιολογικές Παράμετροι · Garmin · RENPHO · scans 2014→.</footer>
+
+<script>
+const TXT='#D8E2F2', SOFT='#8FA3C2', BLUE='#4C8DFF', ORANGE='#F5A623', TEAL='#2FD5B0', PURPLE='#B579F2', RED='#E4574F', GREEN='#4CC38A', AMBER='#E8B33B', GREY='#3A4A66';
+Chart.defaults.font.family='"SF Mono", ui-monospace, Menlo, monospace';
+Chart.defaults.font.size=11; Chart.defaults.color=SOFT;
+Chart.defaults.borderColor='#1E2C47';
+const CHARTS={};
+const _newChart=(cv,cfg)=>{
+ try{
+ if(!cv){ return null; }
+ const c=new Chart(cv,cfg); CHARTS[cv.id]=c; return c;
+ }catch(err){ return null; }
+};
+document.getElementById('nav').addEventListener('click', e=>{
+ if(e.target.tagName!=='BUTTON') return;
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
+ document.querySelectorAll('main section').forEach(s=>s.classList.remove('on'));
+ e.target.classList.add('on');
+ const sec=document.getElementById(e.target.dataset.t);
+ sec.classList.add('on');
+ requestAnimationFrame(()=>{
+ sec.querySelectorAll('canvas').forEach(cv=>{ const c=CHARTS[cv.id]; if(c) c.resize(); });
+ });
+});
+
+const rL=["Nov 23","Dec 23","Jan 24","Feb 24","Mar 24","Apr 24","May 24","Jun 24","Aug 24","Nov 24","Dec 24","Jan 25","Feb 25","Mar 25","Apr 25","May 25","Jun 25","Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26"];
+const rW=[81.0,81.4,80.3,80.5,80.5,80.2,80.7,81.0,81.4,81.5,81.7,84.4,83.8,82.2,81.5,81.1,80.8,79.8,79.3,79.3,78.6,78.0,77.9,78.8,78.1,78.3,78.2];
+const rBF=[21.0,21.2,20.7,20.7,20.7,20.6,20.9,21.1,21.3,21.4,21.4,22.7,22.4,21.7,21.3,21.2,21.1,20.6,20.4,20.4,20.1,19.8,19.7,20.1,19.8,19.9,19.8];
+const rMM=[60.8,61.0,60.5,60.6,60.6,60.5,60.6,60.8,60.9,60.9,61.0,61.9,61.7,61.2,60.9,60.7,60.6,60.2,60.0,60.0,59.7,59.5,59.4,59.8,59.5,59.6,59.5];
+const rBMI=rW.map(w=>+(w/(1.78*1.78)).toFixed(1));
+
+_newChart(cWeightBMI,{type:'line',data:{labels:rL,datasets:[
+ {label:'Weight (kg)',yAxisID:'y',data:rW,borderColor:BLUE,backgroundColor:BLUE,tension:.3,pointRadius:3},
+ {label:'BMI',yAxisID:'y2',data:rBMI,borderColor:ORANGE,backgroundColor:ORANGE,tension:.3,pointRadius:3},
+ {label:'BMI 25',yAxisID:'y2',data:rL.map(()=>25),borderColor:'#8A5A2B',borderDash:[6,5],pointRadius:0}
+]},options:{maintainAspectRatio:false,scales:{y:{min:75,max:90},y2:{position:'right',min:23,max:28,grid:{drawOnChartArea:false}}}}});
+
+_newChart(cBF,{type:'line',data:{labels:rL,datasets:[{label:'Body Fat %',data:rBF,borderColor:TEAL,tension:.3,pointRadius:2}]},options:{maintainAspectRatio:false}});
+
+const wL=["May 07","Aug 07","Nov 08","Apr 17","May 17","Aug 17","Nov 17","Apr 18","Feb 19","Apr 19","Jun 19","Jul 19","Jun 21","Apr 22","Jul 22","Nov 22","Apr 23","Oct 23","Nov 23","Nov 23","Feb 24","Mar 24","Mar 24","May 24","Feb 25","Mar 25","Apr 25","Jul 25","Sep 25","Oct 25","Jun 26","Jun 26","Jul 26"];
+const wWaist=[82.5,82.7,86.1,86.0,87.5,87.5,85.0,87.0,94.0,92.5,92.5,89.5,92.0,88.0,89.8,91.1,91.0,93.0,90.0,91.5,90.4,90.0,91.3,91.3,92.6,90.4,89.0,90.0,90.9,88.6,88.8,88.2,89.0];
+const wWt=[72.7,73.1,74.7,77.4,77.9,78.3,78.3,77.9,81.0,81.5,81.9,82.8,82.5,82.5,82.4,81.0,81.5,81.5,81.2,80.5,80.7,79.6,81.0,81.1,82.3,81.8,81.0,80.0,79.5,78.4,79.3,78.0,78.9];
+_newChart(cWaistLong,{type:'line',data:{labels:wL,datasets:[
+ {label:'Torso cm',yAxisID:'y',data:wWaist,borderColor:PURPLE,tension:.25,pointRadius:2},
+ {label:'Weight kg',yAxisID:'y2',data:wWt,borderColor:BLUE,tension:.25,pointRadius:2}
+]},options:{maintainAspectRatio:false,scales:{y:{min:75,max:100},y2:{position:'right',min:70,max:90,grid:{drawOnChartArea:false}}}}});
+
+const wLowerWaist=[81.3,81.3,84.2,88,89.5,88,88,88,90,91,91,91.5,93.5,89.8,90,89.7,90,90.8,89.4,89.5,87.4,88.1,89.5,89,92,89,89.5,88.7,87.6,86.4,86.9,87,86.1];
+_newChart(cWaistTrue,{type:'line',data:{labels:wL,datasets:[
+ {label:'True waist',data:wLowerWaist,borderColor:TEAL,tension:.25,pointRadius:2},
+ {label:'WHtR 0.5 = 89 cm',data:wL.map(()=>89),borderColor:AMBER,borderDash:[6,5],pointRadius:0},
+ {label:'Risk = 94 cm',data:wL.map(()=>
