@@ -299,22 +299,31 @@ Chart.defaults.font.family='"SF Mono", ui-monospace, Menlo, monospace';
 Chart.defaults.font.size=11; Chart.defaults.color=SOFT;
 Chart.defaults.borderColor='#1E2C47';
 const CHARTS={};
+
 const _newChart=(cv,cfg)=>{
  try{
  if(!cv){ return null; }
  const c=new Chart(cv,cfg); CHARTS[cv.id]=c; return c;
- }catch(err){ return null; }
+ }catch(err){ console.error(err); return null; }
 };
+
+// Navigation tab handler with explicit chart resize / show trigger
 document.getElementById('nav').addEventListener('click', e=>{
  if(e.target.tagName!=='BUTTON') return;
  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('on'));
  document.querySelectorAll('main section').forEach(s=>s.classList.remove('on'));
  e.target.classList.add('on');
- const sec=document.getElementById(e.target.dataset.t);
- sec.classList.add('on');
- requestAnimationFrame(()=>{
- sec.querySelectorAll('canvas').forEach(cv=>{ const c=CHARTS[cv.id]; if(c) c.resize(); });
- });
+ const targetId = e.target.dataset.t;
+ const sec=document.getElementById(targetId);
+ if(sec){
+  sec.classList.add('on');
+  requestAnimationFrame(()=>{
+   sec.querySelectorAll('canvas').forEach(cv=>{
+    const c=CHARTS[cv.id];
+    if(c){ c.resize(); c.update(); }
+   });
+  });
+ }
 });
 
 const rL=["Nov 23","Dec 23","Jan 24","Feb 24","Mar 24","Apr 24","May 24","Jun 24","Aug 24","Nov 24","Dec 24","Jan 25","Feb 25","Mar 25","Apr 25","May 25","Jun 25","Jul 25","Aug 25","Sep 25","Oct 25","Nov 25","Dec 25","Jan 26","Feb 26","Mar 26","Apr 26"];
@@ -323,24 +332,60 @@ const rBF=[21.0,21.2,20.7,20.7,20.7,20.6,20.9,21.1,21.3,21.4,21.4,22.7,22.4,21.7
 const rMM=[60.8,61.0,60.5,60.6,60.6,60.5,60.6,60.8,60.9,60.9,61.0,61.9,61.7,61.2,60.9,60.7,60.6,60.2,60.0,60.0,59.7,59.5,59.4,59.8,59.5,59.6,59.5];
 const rBMI=rW.map(w=>+(w/(1.78*1.78)).toFixed(1));
 
-_newChart(cWeightBMI,{type:'line',data:{labels:rL,datasets:[
+_newChart(document.getElementById('cWeightBMI'),{type:'line',data:{labels:rL,datasets:[
  {label:'Weight (kg)',yAxisID:'y',data:rW,borderColor:BLUE,backgroundColor:BLUE,tension:.3,pointRadius:3},
  {label:'BMI',yAxisID:'y2',data:rBMI,borderColor:ORANGE,backgroundColor:ORANGE,tension:.3,pointRadius:3},
  {label:'BMI 25',yAxisID:'y2',data:rL.map(()=>25),borderColor:'#8A5A2B',borderDash:[6,5],pointRadius:0}
 ]},options:{maintainAspectRatio:false,scales:{y:{min:75,max:90},y2:{position:'right',min:23,max:28,grid:{drawOnChartArea:false}}}}});
 
-_newChart(cBF,{type:'line',data:{labels:rL,datasets:[{label:'Body Fat %',data:rBF,borderColor:TEAL,tension:.3,pointRadius:2}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cBF'),{type:'line',data:{labels:rL,datasets:[{label:'Body Fat %',data:rBF,borderColor:TEAL,tension:.3,pointRadius:2}]},options:{maintainAspectRatio:false}});
 
 const wL=["May 07","Aug 07","Nov 08","Apr 17","May 17","Aug 17","Nov 17","Apr 18","Feb 19","Apr 19","Jun 19","Jul 19","Jun 21","Apr 22","Jul 22","Nov 22","Apr 23","Oct 23","Nov 23","Nov 23","Feb 24","Mar 24","Mar 24","May 24","Feb 25","Mar 25","Apr 25","Jul 25","Sep 25","Oct 25","Jun 26","Jun 26","Jul 26"];
 const wWaist=[82.5,82.7,86.1,86.0,87.5,87.5,85.0,87.0,94.0,92.5,92.5,89.5,92.0,88.0,89.8,91.1,91.0,93.0,90.0,91.5,90.4,90.0,91.3,91.3,92.6,90.4,89.0,90.0,90.9,88.6,88.8,88.2,89.0];
 const wWt=[72.7,73.1,74.7,77.4,77.9,78.3,78.3,77.9,81.0,81.5,81.9,82.8,82.5,82.5,82.4,81.0,81.5,81.5,81.2,80.5,80.7,79.6,81.0,81.1,82.3,81.8,81.0,80.0,79.5,78.4,79.3,78.0,78.9];
-_newChart(cWaistLong,{type:'line',data:{labels:wL,datasets:[
+_newChart(document.getElementById('cWaistLong'),{type:'line',data:{labels:wL,datasets:[
  {label:'Torso cm',yAxisID:'y',data:wWaist,borderColor:PURPLE,tension:.25,pointRadius:2},
  {label:'Weight kg',yAxisID:'y2',data:wWt,borderColor:BLUE,tension:.25,pointRadius:2}
 ]},options:{maintainAspectRatio:false,scales:{y:{min:75,max:100},y2:{position:'right',min:70,max:90,grid:{drawOnChartArea:false}}}}});
 
 const wLowerWaist=[81.3,81.3,84.2,88,89.5,88,88,88,90,91,91,91.5,93.5,89.8,90,89.7,90,90.8,89.4,89.5,87.4,88.1,89.5,89,92,89,89.5,88.7,87.6,86.4,86.9,87,86.1];
-_newChart(cWaistTrue,{type:'line',data:{labels:wL,datasets:[
+_newChart(document.getElementById('cWaistTrue'),{type:'line',data:{labels:wL,datasets:[
  {label:'True waist',data:wLowerWaist,borderColor:TEAL,tension:.25,pointRadius:2},
  {label:'WHtR 0.5 = 89 cm',data:wL.map(()=>89),borderColor:AMBER,borderDash:[6,5],pointRadius:0},
- {label:'Risk = 94 cm',data:wL.map(()=>
+ {label:'Risk = 94 cm',data:wL.map(()=>94),borderColor:RED,borderDash:[4,4],pointRadius:0}
+]},options:{maintainAspectRatio:false}});
+
+const lvL=['Jul 2016','Jun 2021','Nov 2022','Nov 2023','Jan 2025','Jun 2026'];
+_newChart(document.getElementById('cLiver'),{type:'line',data:{labels:lvL,datasets:[
+ {label:'AST',data:[17,15,17,12,20,null],borderColor:ORANGE,tension:.35,pointRadius:4,spanGaps:true},
+ {label:'ALT',data:[22,31,22,25,35,18],borderColor:BLUE,tension:.35,pointRadius:4}
+]},options:{maintainAspectRatio:false}});
+
+_newChart(document.getElementById('cPsa'),{type:'bar',data:{labels:['Nov 2023','Jan 2025','Jun 2026'],datasets:[{data:[1.91,2.80,2.0],backgroundColor:[GREEN,ORANGE,GREEN]}]},options:{maintainAspectRatio:false}});
+
+const kL=['Jul 2016','Jun 2021','Nov 2022','Nov 2023','Jan 2025','Jun 2026'];
+_newChart(document.getElementById('cEgfr'),{type:'line',data:{labels:kL,datasets:[{label:'eGFR',data:[98,99,93,88,59,86],borderColor:RED,tension:.35}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cCreat'),{type:'line',data:{labels:kL,datasets:[{label:'Creatinine',data:[0.95,0.92,1.0,1.04,1.44,1.10],borderColor:ORANGE,tension:.35}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cGlucose'),{type:'line',data:{labels:kL,datasets:[{label:'Fasting glucose',data:[107,90,104,103,131,111],borderColor:RED,tension:.35}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cChol'),{type:'line',data:{labels:kL,datasets:[
+ {label:'Total',data:[209,200,224,230,234,223],borderColor:ORANGE,tension:.35},
+ {label:'LDL',data:[144,141,165,166,172,163],borderColor:RED,tension:.35},
+ {label:'HDL',data:[49,45,41,48,51,46],borderColor:GREEN,tension:.35}
+]},options:{maintainAspectRatio:false}});
+
+_newChart(document.getElementById('cWtGlu'),{type:'line',data:{labels:kL,datasets:[
+ {label:'Glucose',yAxisID:'y',data:[107,90,104,103,131,111],borderColor:RED,tension:.35},
+ {label:'Weight',yAxisID:'y2',data:[77,82.5,81,81,85.1,78],borderColor:BLUE,tension:.35}
+]},options:{maintainAspectRatio:false,scales:{y:{min:80,max:145},y2:{position:'right',min:74,max:88,grid:{drawOnChartArea:false}}}}});
+
+_newChart(document.getElementById('cNoct'),{type:'bar',data:{labels:['25','26','27','28','29','30','1 Jul'],datasets:[{data:[4,2,2,2,2,2,3],backgroundColor:GREY}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cIntakeSleep'),{type:'scatter',data:{datasets:[{data:[{x:18.67,y:2},{x:19.0,y:4}],backgroundColor:TEAL}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cMuscle'),{type:'line',data:{labels:rL,datasets:[{label:'Muscle mass',data:rMM,borderColor:GREEN,tension:.3}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cTape'),{type:'line',data:{labels:['Nov 23','Feb 24','Jun 26'],datasets:[{label:'Chest',data:[105.0,102.4,102.0],borderColor:BLUE}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cVo2'),{type:'line',data:{labels:['Aug','Sep','Oct','Nov','Dec','Jan 26','Feb','Mar','Apr','May','Jun','Jul'],datasets:[{data:[47.7,47.7,47.6,47.6,47.5,47.8,47.5,48.0,48.1,48.2,48.3,50.7],borderColor:GREEN,tension:.3}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cSteps'),{type:'bar',data:{labels:['10 Apr','17 Apr','24 Apr'],datasets:[{data:[47128,49652,50400],backgroundColor:TEAL}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cMix'),{type:'bar',data:{labels:['Jan 26','Feb 26'],datasets:[{label:'Strength',data:[11,11],backgroundColor:ORANGE}]},options:{maintainAspectRatio:false}});
+_newChart(document.getElementById('cYearMix'),{type:'bar',data:{labels:['2020','2021','2022','2023','2024','2025','2026'],datasets:[{label:'Strength',data:[0,87,85,98,119,128,67],backgroundColor:ORANGE}]},options:{maintainAspectRatio:false}});
+</script>
+</body>
+</html>
